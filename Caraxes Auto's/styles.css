@@ -1,3 +1,11 @@
+@font-face {
+  font-family: "Dash Horizon";
+  src: url("fonts/DashHorizon.otf") format("opentype");
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+}
+
 :root {
   color-scheme: light;
   box-sizing: border-box;
@@ -13,7 +21,7 @@ body {
   font:
     14px -apple-system,
     BlinkMacSystemFont,
-    sans-serif;
+    ;
   background: #fff;
   color: #000;
 }
@@ -685,9 +693,10 @@ section[id] {
   right: -1%;
   bottom: -4%;
   font: 900 clamp(8rem, 26vw, 24rem)/0.78 var(--f-display);
+  font-family: "Dash Horizon", sans-serif;
   text-transform: uppercase;
   color: transparent;
-  -webkit-text-stroke: 2px rgba(255, 255, 255, 0.14);
+  -webkit-text-stroke: 2px rgba(255, 247, 247, 0.199);
   pointer-events: none;
   user-select: none;
 }
@@ -1300,7 +1309,7 @@ section[id] {
   object-fit: cover;
   background: #000;
 }
-@media (min-aspect-ratio: 3/4) {
+@media (min-width: 900px) and (min-aspect-ratio: 3/4) {
   #amb {
     display: block;
   }

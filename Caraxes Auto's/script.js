@@ -23,6 +23,20 @@
     window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches;
   root.classList.add("locked");
 
+  /* The hero is hidden behind the entry film, so do not make the browser
+     download both videos at the same time. Start it only when the site is
+     actually revealed. */
+  var heroVideo = $(".hero-video");
+  function startHeroVideo() {
+    if (!heroVideo || heroVideo.src) return;
+    var src = heroVideo.getAttribute("data-src");
+    if (!src) return;
+    heroVideo.src = src;
+    heroVideo.load();
+    var pr = heroVideo.play();
+    if (pr && pr.catch) pr.catch(function () {});
+  }
+
   /* ---- contact details ------------------------------------------------ */
   $("#waNum").textContent = CONFIG.PHONE_LABEL;
   $("#addr").textContent = CONFIG.ADDRESS;
@@ -222,7 +236,7 @@
     ambRaf = 0;
   var ambCtx = amb.getContext ? amb.getContext("2d") : null;
   var wide = window.matchMedia
-    ? matchMedia("(min-aspect-ratio: 3/4)")
+    ? matchMedia("(min-width: 900px) and (min-aspect-ratio: 3/4)")
     : { matches: false };
   var msgs = [
     [0, "Assembling the engine"],
@@ -270,6 +284,7 @@
     } catch (e) {}
     loader.hidden = true;
     gate.hidden = true;
+    startHeroVideo();
     root.classList.remove("locked");
     window.scrollTo({ top: 0, behavior: "instant" });
     root.classList.add("entered");
@@ -285,6 +300,13 @@
     failed = true;
     if (started && !loader.hidden) enter();
   }
+  function shouldSkipIntro() {
+    var connection = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+    return !!(
+      connection &&
+      (connection.saveData || connection.effectiveType === "slow-2g" || connection.effectiveType === "2g")
+    );
+  }
 
   vid.addEventListener("ended", enter);
   vid.addEventListener("error", fail);
@@ -298,8 +320,16 @@
   $("#gateBtn").addEventListener("click", function () {
     if (started) return;
     started = true;
+    if (shouldSkipIntro()) {
+      entered = false;
+      sweep(function () {
+        entered = true;
+        showSite();
+      });
+      return;
+    }
     vid.muted = false;
-    vid.volume = 0.7;
+    vid.volume = 0.07;
     try {
       vid.currentTime = 0;
     } catch (e) {}
