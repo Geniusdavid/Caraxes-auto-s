@@ -68,25 +68,48 @@
   $("#addr").textContent = CONFIG.ADDRESS;
 
   /* ---- video slots ---------------------------------------------------- */
+  function slotSource(v, el) {
+    var mobile = matchMedia("(max-width: 767px)").matches;
+    var webm = el.canPlayType('video/webm; codecs="vp9"') !== "";
+    var format = webm ? "webm" : "mp4";
+    var responsive = v.getAttribute(
+      "data-" + (mobile ? "mobile" : "desktop") + "-" + format,
+    );
+    return responsive || v.getAttribute("data-src");
+  }
+  function loadVideoSlot(v) {
+    if (v.__videoLoaded || shouldSkipVideo()) return;
+    var label = v.getAttribute("data-label") || "Video";
+    var el = document.createElement("video");
+    var src = slotSource(v, el);
+    if (!src) return;
+    v.__videoLoaded = true;
+    el.muted = true;
+    el.loop = true;
+    el.playsInline = true;
+    el.autoplay = true;
+    el.preload = "metadata";
+    var poster = v.getAttribute("data-poster");
+    if (poster) el.poster = poster;
+    el.setAttribute("aria-label", label);
+    v.appendChild(el);
+    el.src = src;
+    el.load();
+    var pr = el.play();
+    if (pr && pr.catch) pr.catch(function () {});
+  }
+  var videoSlots = [];
   $$(".vid").forEach(function (v) {
-    var src = v.getAttribute("data-src"),
+    var hasSource =
+      v.getAttribute("data-src") ||
+      v.getAttribute("data-desktop-webm") ||
+      v.getAttribute("data-desktop-mp4") ||
+      v.getAttribute("data-mobile-webm") ||
+      v.getAttribute("data-mobile-mp4"),
       label = v.getAttribute("data-label") || "Video";
-    if (src) {
-      var el = document.createElement("video");
-      el.src = src;
-      el.muted = true;
-      el.loop = true;
-      el.playsInline = true;
-      el.autoplay = true;
-      el.preload = "metadata";
-      var poster = v.getAttribute("data-poster");
-      if (poster) el.poster = poster;
-      el.setAttribute("aria-label", label);
-      v.appendChild(el);
-      if (el.play) {
-        var pr = el.play();
-        if (pr && pr.catch) pr.catch(function () {});
-      }
+    if (hasSource) {
+      videoSlots.push(v);
+      return;
     } else {
       v.insertAdjacentHTML(
         "beforeend",
@@ -98,6 +121,24 @@
       v.setAttribute("aria-label", label + " (video placeholder)");
     }
   });
+
+  if ("IntersectionObserver" in window && !shouldSkipVideo()) {
+    var slotObserver = new IntersectionObserver(
+      function (entries) {
+        entries.forEach(function (entry) {
+          if (!entry.isIntersecting) return;
+          loadVideoSlot(entry.target);
+          slotObserver.unobserve(entry.target);
+        });
+      },
+      { rootMargin: "300px 0px" },
+    );
+    videoSlots.forEach(function (v) {
+      slotObserver.observe(v);
+    });
+  } else if (!shouldSkipVideo()) {
+    videoSlots.forEach(loadVideoSlot);
+  }
 
   /* ---- enquiry form --------------------------------------------------- */
   $$("[data-interest]").forEach(function (a) {
