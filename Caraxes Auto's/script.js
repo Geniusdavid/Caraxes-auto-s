@@ -27,10 +27,31 @@
      main page is revealed. This gives the large background video time to
      buffer without delaying the first page render. */
   var heroVideo = $(".hero-video");
+  function connectionInfo() {
+    return navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+  }
+  function shouldSkipVideo() {
+    var connection = connectionInfo();
+    return !!(
+      reduced ||
+      (connection &&
+        (connection.saveData ||
+          connection.effectiveType === "slow-2g" ||
+          connection.effectiveType === "2g"))
+    );
+  }
+  function heroSource() {
+    var mobile = matchMedia("(max-width: 767px)").matches;
+    var webm = heroVideo.canPlayType('video/webm; codecs="vp9"') !== "";
+    var format = webm ? "webm" : "mp4";
+    return heroVideo.getAttribute(
+      "data-" + (mobile ? "mobile" : "desktop") + "-" + format,
+    );
+  }
   function startHeroVideo(playNow) {
-    if (!heroVideo) return;
+    if (!heroVideo || shouldSkipVideo()) return;
     if (!heroVideo.src) {
-      var src = heroVideo.getAttribute("data-src");
+      var src = heroSource();
       if (!src) return;
       heroVideo.src = src;
       heroVideo.preload = "auto";
@@ -306,11 +327,7 @@
     if (started && !loader.hidden) enter();
   }
   function shouldSkipIntro() {
-    var connection = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
-    return !!(
-      connection &&
-      (connection.saveData || connection.effectiveType === "slow-2g" || connection.effectiveType === "2g")
-    );
+    return shouldSkipVideo();
   }
 
   vid.addEventListener("ended", enter);
