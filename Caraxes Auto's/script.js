@@ -23,18 +23,23 @@
     window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches;
   root.classList.add("locked");
 
-  /* The hero is hidden behind the entry film, so do not make the browser
-     download both videos at the same time. Start it only when the site is
-     actually revealed. */
+  /* Prepare the hero while the intro is playing, then start it when the
+     main page is revealed. This gives the large background video time to
+     buffer without delaying the first page render. */
   var heroVideo = $(".hero-video");
-  function startHeroVideo() {
-    if (!heroVideo || heroVideo.src) return;
-    var src = heroVideo.getAttribute("data-src");
-    if (!src) return;
-    heroVideo.src = src;
-    heroVideo.load();
-    var pr = heroVideo.play();
-    if (pr && pr.catch) pr.catch(function () {});
+  function startHeroVideo(playNow) {
+    if (!heroVideo) return;
+    if (!heroVideo.src) {
+      var src = heroVideo.getAttribute("data-src");
+      if (!src) return;
+      heroVideo.src = src;
+      heroVideo.preload = "auto";
+      heroVideo.load();
+    }
+    if (playNow) {
+      var pr = heroVideo.play();
+      if (pr && pr.catch) pr.catch(function () {});
+    }
   }
 
   /* ---- contact details ------------------------------------------------ */
@@ -284,7 +289,7 @@
     } catch (e) {}
     loader.hidden = true;
     gate.hidden = true;
-    startHeroVideo();
+    startHeroVideo(true);
     root.classList.remove("locked");
     window.scrollTo({ top: 0, behavior: "instant" });
     root.classList.add("entered");
@@ -328,6 +333,7 @@
       });
       return;
     }
+    startHeroVideo(false);
     vid.muted = false;
     vid.volume = 0.07;
     try {
