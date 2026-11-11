@@ -7,7 +7,7 @@
     PHONE_LABEL: "+000 000 000 0000", // how the number is shown on the page
     ADDRESS: "Showroom address goes here",
   };
-  /* The intro film is intro.mp4, kept in the same folder as this page.
+  /* The intro film is videos/intro.mp4.
    To add a showroom video, set data-src="your-video.mp4" (and optionally data-poster="your-image.jpg")
    on any element with class "vid". Keep clips short and compressed. */
   /* -------------------------------------------------------------------- */
@@ -97,6 +97,25 @@
     el.load();
     var pr = el.play();
     if (pr && pr.catch) pr.catch(function () {});
+    if (v.closest(".reel")) {
+      var soundBtn = document.createElement("button");
+      soundBtn.className = "vid-audio";
+      soundBtn.type = "button";
+      soundBtn.textContent = "Play sound";
+      soundBtn.setAttribute("aria-pressed", "false");
+      soundBtn.addEventListener("click", function (e) {
+        e.stopPropagation();
+        el.muted = !el.muted;
+        if (!el.muted) {
+          el.volume = 1;
+          var soundPlay = el.play();
+          if (soundPlay && soundPlay.catch) soundPlay.catch(function () {});
+        }
+        soundBtn.textContent = el.muted ? "Play sound" : "Mute sound";
+        soundBtn.setAttribute("aria-pressed", String(!el.muted));
+      });
+      v.appendChild(soundBtn);
+    }
   }
   var videoSlots = [];
   $$(".vid").forEach(function (v) {
